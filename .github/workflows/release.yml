@@ -6,6 +6,10 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag, e.g. v0.5.0 (only used on manual dispatch)'
+        required: false
 
 permissions:
   contents: write
@@ -35,12 +39,12 @@ jobs:
         run: bash scripts/build.sh
 
       - name: Assemble package (src + dist)
+        env:
+          PKG: dsh-task-widget-${{ steps.ver.outputs.version }}
         run: |
-          VERSION="${{ steps.ver.outputs.version }}"
-          PKG="dsh-task-widget-$VERSION"
           rm -rf "$PKG"
           mkdir -p "$PKG"
-          python3 - <<PY
+          python3 - <<'PY'
           import os, shutil
           pkg = os.environ['PKG']
           exclude = {'.git', '.github', pkg, '.gitignore'}
@@ -59,10 +63,11 @@ jobs:
           PY
 
       - name: Package zip
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          VERSION="${{ steps.ver.outputs.version }}"
           PKG="dsh-task-widget-$VERSION"
-          python3 - <<PY
+          python3 - <<'PY'
           import shutil, os
           version = os.environ['VERSION']
           pkg = f"dsh-task-widget-{version}"
