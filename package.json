@@ -1,0 +1,34 @@
+{
+  "name": "@dsh-external/dsh-task-widget",
+  "version": "0.5.0",
+  "description": "Windows 桌面独立小组件（液态玻璃任务台）：Win11 DWM Acrylic 真高斯模糊玻璃、聚合全部任务与进度、完成提醒（Windows 系统通知）、本回合/累计 Token 用量、账户余额；深/浅色跟随系统。设置页可调强调色/玻璃与卡片透明度/四角位置/用量卡开关；独立 Token 用量卡；任务点击跳转对应会话；位置锁定；运行中计时。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ],
+      "platform": "web"
+    }
+  },
+  "files": [
+    "lib",
+    "widget",
+    "scripts",
+    "README.md"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "bash scripts/build.sh"
+  }
+}
