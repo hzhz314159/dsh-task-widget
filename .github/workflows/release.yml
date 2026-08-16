@@ -1,0 +1,82 @@
+name: Release dsh-task-widget
+
+# 推 v* 标签时自动：校验 → 组装 src+dist → 打包 zip → 发布 GitHub Release（带产物）。
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            RAW="${{ github.event.inputs.version }}"
+          else
+            RAW="${GITHUB_REF_NAME}"
+          fi
+          V="${RAW#v}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "resolved version: $V (tag v$V)"
+
+      - name: Validate (BOM / JS / loader)
+        run: bash scripts/build.sh
+
+      - name: Assemble package (src + dist)
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          PKG="dsh-task-widget-$VERSION"
+          rm -rf "$PKG"
+          mkdir -p "$PKG"
+          python3 - <<PY
+          import os, shutil
+          pkg = os.environ['PKG']
+          exclude = {'.git', '.github', pkg, '.gitignore'}
+          for name in os.listdir('.'):
+              if name in exclude:
+                  continue
+              src = os.path.join('.', name)
+              dst = os.path.join(pkg, 'src', name)
+              if os.path.isdir(src):
+                  shutil.copytree(src, dst)
+              else:
+                  shutil.copy2(src, dst)
+          # dist = 与 src 相同的部署副本
+          shutil.copytree(os.path.join(pkg, 'src'), os.path.join(pkg, 'dist'))
+          print("assembled", pkg)
+          PY
+
+      - name: Package zip
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          PKG="dsh-task-widget-$VERSION"
+          python3 - <<PY
+          import shutil, os
+          version = os.environ['VERSION']
+          pkg = f"dsh-task-widget-{version}"
+          shutil.make_archive(pkg, 'zip', '.', pkg)
+          print("created", pkg + '.zip')
+          PY
+          ls -la "$PKG.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: dsh-task-widget v${{ steps.ver.outputs.version }}
+          files: dsh-task-widget-*.zip
+          generate_release_notes: true
+          tag_name: v${{ steps.ver.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
