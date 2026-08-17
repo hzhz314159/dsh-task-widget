@@ -1,0 +1,7 @@
+# F6c bundle 装配补丁：让 `dsh plugin add` / `dsh bundle` 正式装配时自动登记此插件。
+# 注入双路径一致：dev_inject_plugin 走 junction+loader.create（与 bundle 无关），
+# 而 cordis.patch.yml 仅在宿主读取 bundles 列表时应用。entry id `task-widget` 全局唯一，禁止复用。
+- insert:
+    - id: task-widget
+      name: '@dsh-external/dsh-task-widget'
+      config: {}
